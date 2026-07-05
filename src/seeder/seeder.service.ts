@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Character } from '../modules/character/character.entity';
@@ -8,8 +8,13 @@ import { CharacterSeederService } from './character-seeder.service';
 import { LocationSeederService } from './location-seeder.service';
 import { EpisodeSeederService } from './episode-seeder.service';
 
+export enum SeederStrategy {
+  FULL_SEED = 'full_seed',
+  UPSERT = 'upsert',
+}
+
 @Injectable()
-export class SeederService {
+export class SeederService implements OnApplicationBootstrap {
   private readonly logger = new Logger(SeederService.name);
 
   constructor(
@@ -25,28 +30,45 @@ export class SeederService {
   ) {}
 
   async onApplicationBootstrap(): Promise<void> {
-    const characterCount = await this.characterRepo.count();
-    if (characterCount === 0) {
-      this.logger.log('Starting seeder...');
+    try {
+      // Task 5.1: Check row counts in all 3 tables
+      const characterCount = await this.characterRepo.count();
+      const locationCount = await this.locationRepo.count();
+      const episodeCount = await this.episodeRepo.count();
+
+      // Log row counts
+      this.logger.log(
+        `Character: ${characterCount} rows, Location: ${locationCount} rows, Episode: ${episodeCount} rows`,
+      );
+
+      // Determine strategy: if any table is empty -> full seed, else -> upsert
+      const strategy =
+        characterCount === 0 || locationCount === 0 || episodeCount === 0
+          ? SeederStrategy.FULL_SEED
+          : SeederStrategy.UPSERT;
+
+      this.logger.log(`Strategy: ${strategy}`);
+
+      // Task 5.3: Call seeders in order: character -> location -> episode
+      this.logger.log('Starting character seeder...');
       await this.characterSeeder.seed();
-    } else {
-      this.logger.log(`Skipping character seed: ${characterCount} characters already in DB`);
-    }
+      const finalCharacterCount = await this.characterRepo.count();
+      this.logger.log(`Character seeding complete: ${finalCharacterCount} records in database`);
 
-    const locationCount = await this.locationRepo.count();
-    if (locationCount === 0) {
+      this.logger.log('Starting location seeder...');
       await this.locationSeeder.seed();
-    } else {
-      this.logger.log(`Skipping location seed: ${locationCount} locations already in DB`);
-    }
+      const finalLocationCount = await this.locationRepo.count();
+      this.logger.log(`Location seeding complete: ${finalLocationCount} records in database`);
 
-    const episodeCount = await this.episodeRepo.count();
-    if (episodeCount === 0) {
+      this.logger.log('Starting episode seeder...');
       await this.episodeSeeder.seed();
-    } else {
-      this.logger.log(`Skipping episode seed: ${episodeCount} episodes already in DB`);
-    }
+      const finalEpisodeCount = await this.episodeRepo.count();
+      this.logger.log(`Episode seeding complete: ${finalEpisodeCount} records in database`);
 
-    this.logger.log('Seeder finished');
+      this.logger.log('Seeder finished');
+    } catch (err: any) {
+      this.logger.error(`Seeder failed: ${err.message}`, err.stack);
+      throw err;
+    }
   }
 }

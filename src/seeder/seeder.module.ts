@@ -13,5 +13,6 @@ import { EpisodeSeederService } from './episode-seeder.service';
     TypeOrmModule.forFeature([Character, Location, Episode]),
   ],
   providers: [SeederService, CharacterSeederService, LocationSeederService, EpisodeSeederService],
+  exports: [SeederService],
 })
 export class SeederModule {}
