@@ -1,0 +1,7 @@
+node_modules
+.git
+data
+static
+.gitignore
+.gitkeep
+*.md
