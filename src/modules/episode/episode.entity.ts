@@ -7,7 +7,7 @@ export class Episode extends BaseEntity {
   name: string;
 
   @Column({ default: '' })
-  airDate: string;
+  air_date: string;
 
   @Column({ default: '' })
   episode: string;
