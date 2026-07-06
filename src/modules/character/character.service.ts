@@ -2,7 +2,11 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Character } from './character.entity';
-import { PaginationService, PaginationInfo } from '../../common';
+import {
+  PaginationService,
+  PaginationInfo,
+  normalizeUpstreamUrl,
+} from '../../common';
 
 export interface CharacterResponse {
   id: number;
@@ -29,8 +33,6 @@ export class CharacterService {
 
   async findAll(
     page = 1,
-    host: string = 'localhost:3000',
-    protocol: string = 'https',
   ): Promise<{ info: PaginationInfo; results: CharacterResponse[] }> {
     const [items, total] = await this.repo.findAndCount({
       order: { id: 'ASC' },
@@ -41,8 +43,7 @@ export class CharacterService {
     const info = this.paginationService.calculatePagination(
       page,
       total,
-      `${host}/api/character`,
-      protocol,
+      '/character',
     );
 
     const results = items.map((c) => this.toResponse(c));
@@ -66,11 +67,14 @@ export class CharacterService {
       species: c.species,
       type: c.type,
       gender: c.gender,
-      origin: { name: c.originName, url: c.originUrl },
-      location: { name: c.locationName, url: c.locationUrl },
-      image: `/api/character/avatar/${c.id}.jpeg`,
-      episode: c.episodeUrls.map((u) => u.replace(/https?:\/\/[^\/]+/, '')),
-      url: c.url,
+      origin: { name: c.originName, url: normalizeUpstreamUrl(c.originUrl) },
+      location: {
+        name: c.locationName,
+        url: normalizeUpstreamUrl(c.locationUrl),
+      },
+      image: `/character/avatar/${c.id}.jpeg`,
+      episode: c.episodeUrls.map((u) => normalizeUpstreamUrl(u)),
+      url: normalizeUpstreamUrl(c.url),
       created: c.created,
     };
   }

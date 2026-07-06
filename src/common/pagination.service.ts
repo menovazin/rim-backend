@@ -15,15 +15,14 @@ export class PaginationService {
     page: number,
     total: number,
     baseUrl: string,
-    protocol: string = 'https',
   ): PaginationInfo {
     const pages = Math.ceil(total / PAGE_SIZE);
 
     return {
       count: total,
       pages,
-      next: page < pages ? `${protocol}://${baseUrl}?page=${page + 1}` : null,
-      prev: page > 1 ? `${protocol}://${baseUrl}?page=${page - 1}` : null,
+      next: page < pages ? `${baseUrl}?page=${page + 1}` : null,
+      prev: page > 1 ? `${baseUrl}?page=${page - 1}` : null,
     };
   }
 

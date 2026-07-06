@@ -107,7 +107,7 @@ describe('AppController (e2e)', () => {
   }
 
   describe('GET /api', () => {
-    it('returns status 200 with discoverable resource links', async () => {
+    it('returns status 200 with discoverable relative resource links', async () => {
       const response = await request(httpServer).get('/api').expect(200);
 
       expect(response.body).toHaveProperty('characters');
@@ -118,9 +118,14 @@ describe('AppController (e2e)', () => {
       expect(response.body.locations).toHaveProperty('url');
       expect(response.body.episodes).toHaveProperty('url');
 
-      expect(response.body.characters.url).toMatch(/\/api\/character$/);
-      expect(response.body.locations.url).toMatch(/\/api\/location$/);
-      expect(response.body.episodes.url).toMatch(/\/api\/episode$/);
+      expect(response.body.characters.url).toBe('/character');
+      expect(response.body.locations.url).toBe('/location');
+      expect(response.body.episodes.url).toBe('/episode');
+
+      for (const key of ['characters', 'locations', 'episodes']) {
+        expect(response.body[key].url).not.toContain('http');
+        expect(response.body[key].url).not.toContain('://');
+      }
     });
   });
 
@@ -144,7 +149,7 @@ describe('AppController (e2e)', () => {
       }
     });
 
-    it('first page prev is null and next points to page 2', async () => {
+    it('first page prev is null and next is a relative path to page 2', async () => {
       const endpoints = [
         '/api/character?page=1',
         '/api/location?page=1',
@@ -156,10 +161,13 @@ describe('AppController (e2e)', () => {
 
         expect(response.body.info.prev).toBeNull();
         expect(response.body.info.next).toContain('page=2');
+        expect(response.body.info.next).toMatch(/^\/[^?]+\?page=2$/);
+        expect(response.body.info.next).not.toContain('http');
+        expect(response.body.info.next).not.toContain('://');
       }
     });
 
-    it('final page next is null and prev points to previous page', async () => {
+    it('final page next is null and prev is a relative path to the previous page', async () => {
       const endpoints = [
         { url: '/api/character?page=2', prevPage: 'page=1' },
         { url: '/api/location?page=2', prevPage: 'page=1' },
@@ -171,6 +179,9 @@ describe('AppController (e2e)', () => {
 
         expect(response.body.info.next).toBeNull();
         expect(response.body.info.prev).toContain(prevPage);
+        expect(response.body.info.prev).toMatch(/^\/[^?]+\?page=1$/);
+        expect(response.body.info.prev).not.toContain('http');
+        expect(response.body.info.prev).not.toContain('://');
       }
     });
   });
@@ -199,6 +210,105 @@ describe('AppController (e2e)', () => {
 
       for (const endpoint of endpoints) {
         await request(httpServer).get(endpoint).expect(404);
+      }
+    });
+  });
+
+  describe('URL normalization', () => {
+    it('strips upstream domain and /api from character detail URLs', async () => {
+      const response = await request(httpServer)
+        .get('/api/character/1')
+        .expect(200);
+
+      expect(response.body.url).toBe('/character/1');
+      expect(response.body.origin.url).toBe('/location/1');
+      expect(response.body.location.url).toBe('/location/1');
+      expect(response.body.image).toBe('/character/avatar/1.jpeg');
+      expect(response.body.episode).toEqual(['/episode/1']);
+
+      const allUrls = [
+        response.body.url,
+        response.body.origin.url,
+        response.body.location.url,
+        ...response.body.episode,
+      ];
+      for (const url of allUrls) {
+        expect(url).not.toContain('rickandmortyapi.com');
+      }
+    });
+
+    it('strips upstream domain and /api from character list URLs', async () => {
+      const response = await request(httpServer)
+        .get('/api/character?page=1')
+        .expect(200);
+
+      for (const result of response.body.results) {
+        expect(result.url).toMatch(/^\/character\/\d+$/);
+        expect(result.origin.url).toMatch(/^\/location\/\d+$/);
+        expect(result.location.url).toMatch(/^\/location\/\d+$/);
+        for (const episodeUrl of result.episode) {
+          expect(episodeUrl).toMatch(/^\/episode\/\d+$/);
+        }
+        expect(result.url).not.toContain('rickandmortyapi.com');
+        expect(result.url).not.toContain('/api/character/');
+      }
+    });
+
+    it('strips upstream domain and /api from location detail URLs', async () => {
+      const response = await request(httpServer)
+        .get('/api/location/1')
+        .expect(200);
+
+      expect(response.body.url).toBe('/location/1');
+      expect(response.body.residents).toEqual(['/character/1']);
+
+      const allUrls = [response.body.url, ...response.body.residents];
+      for (const url of allUrls) {
+        expect(url).not.toContain('rickandmortyapi.com');
+      }
+    });
+
+    it('strips upstream domain and /api from location list URLs', async () => {
+      const response = await request(httpServer)
+        .get('/api/location?page=1')
+        .expect(200);
+
+      for (const result of response.body.results) {
+        expect(result.url).toMatch(/^\/location\/\d+$/);
+        for (const residentUrl of result.residents) {
+          expect(residentUrl).toMatch(/^\/character\/\d+$/);
+        }
+        expect(result.url).not.toContain('rickandmortyapi.com');
+        expect(result.url).not.toContain('/api/location/');
+      }
+    });
+
+    it('strips upstream domain and /api from episode detail URLs', async () => {
+      const response = await request(httpServer)
+        .get('/api/episode/1')
+        .expect(200);
+
+      expect(response.body.url).toBe('/episode/1');
+      expect(response.body.characters).toEqual(['/character/1']);
+
+      const allUrls = [response.body.url, ...response.body.characters];
+      for (const url of allUrls) {
+        expect(url).not.toContain('rickandmortyapi.com');
+      }
+    });
+
+    it('strips upstream domain and /api from episode list URLs', async () => {
+      const response = await request(httpServer)
+        .get('/api/episode?page=1')
+        .expect(200);
+
+      for (const result of response.body.results) {
+        expect(result.url).toMatch(/^\/episode\/\d+$/);
+        for (const characterUrl of result.characters) {
+          expect(characterUrl).toMatch(/^\/character\/\d+$/);
+        }
+        expect(result.url).not.toContain('rickandmortyapi.com');
+        expect(result.url).not.toContain('/api/episode/');
       }
     });
   });

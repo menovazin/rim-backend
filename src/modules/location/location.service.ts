@@ -2,7 +2,11 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Location } from './location.entity';
-import { PaginationService, PaginationInfo } from '../../common';
+import {
+  PaginationService,
+  PaginationInfo,
+  normalizeUpstreamUrl,
+} from '../../common';
 
 export interface LocationResponse {
   id: number;
@@ -24,8 +28,6 @@ export class LocationService {
 
   async findAll(
     page = 1,
-    host: string = 'localhost:3000',
-    protocol: string = 'https',
   ): Promise<{ info: PaginationInfo; results: LocationResponse[] }> {
     const [items, total] = await this.repo.findAndCount({
       order: { id: 'ASC' },
@@ -36,8 +38,7 @@ export class LocationService {
     const info = this.paginationService.calculatePagination(
       page,
       total,
-      `${host}/api/location`,
-      protocol,
+      '/location',
     );
 
     const results = items.map((l) => this.toResponse(l));
@@ -59,8 +60,8 @@ export class LocationService {
       name: l.name,
       type: l.type,
       dimension: l.dimension,
-      residents: l.residentUrls.map((u) => u.replace(/https?:\/\/[^\/]+/, '')),
-      url: l.url,
+      residents: l.residentUrls.map((u) => normalizeUpstreamUrl(u)),
+      url: normalizeUpstreamUrl(l.url),
       created: l.created,
     };
   }

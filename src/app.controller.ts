@@ -1,22 +1,18 @@
-import { Controller, Get, Req } from '@nestjs/common';
-import { Request } from 'express';
+import { Controller, Get } from '@nestjs/common';
 
 @Controller()
 export class AppController {
   @Get('api')
-  getApiInfo(@Req() req: Request) {
-    const protocol = req.protocol || 'https';
-    const host = req.get('host') || 'localhost:3000';
-
+  getApiInfo() {
     return {
       characters: {
-        url: `${protocol}://${host}/api/character`,
+        url: '/character',
       },
       locations: {
-        url: `${protocol}://${host}/api/location`,
+        url: '/location',
       },
       episodes: {
-        url: `${protocol}://${host}/api/episode`,
+        url: '/episode',
       },
     };
   }
