@@ -18,8 +18,6 @@ export class PaginationService {
     protocol: string = 'https',
   ): PaginationInfo {
     const pages = Math.ceil(total / PAGE_SIZE);
-    
-    console.log('PaginationService.calculatePagination:', { page, total, pages, baseUrl, protocol });
 
     return {
       count: total,
