@@ -60,6 +60,8 @@ export class LocationSeederService {
       page++;
     }
 
-    this.logger.log(`Location seed complete: ${totalSeeded} locations processed`);
+    this.logger.log(
+      `Location seed complete: ${totalSeeded} locations processed`,
+    );
   }
 }

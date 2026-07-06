@@ -15,7 +15,7 @@ module.exports = {
     node: true,
     jest: true,
   },
-  ignorePatterns: ['.eslintrc.js'],
+  ignorePatterns: ['.eslintrc.js', 'arch-refs/', 'dist/', 'node_modules/'],
   rules: {
     '@typescript-eslint/no-explicit-any': 'off',
   },

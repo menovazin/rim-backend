@@ -46,8 +46,13 @@ howto.md
 task.md
 arch-refs/
 issues/
+docs/
 
 .agents/
 .cline/
 .clinerules/
 .opencode/
+openspec/
+
+# Deployment templates (documented in docs/DEPLOY.md)
+/nginx

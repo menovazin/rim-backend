@@ -108,9 +108,7 @@ describe('AppController (e2e)', () => {
 
   describe('GET /api', () => {
     it('returns status 200 with discoverable resource links', async () => {
-      const response = await request(httpServer)
-        .get('/api')
-        .expect(200);
+      const response = await request(httpServer).get('/api').expect(200);
 
       expect(response.body).toHaveProperty('characters');
       expect(response.body).toHaveProperty('locations');
@@ -128,12 +126,14 @@ describe('AppController (e2e)', () => {
 
   describe('Paginated list endpoints', () => {
     it('returns info and results for character, location, and episode first pages', async () => {
-      const endpoints = ['/api/character?page=1', '/api/location?page=1', '/api/episode?page=1'];
+      const endpoints = [
+        '/api/character?page=1',
+        '/api/location?page=1',
+        '/api/episode?page=1',
+      ];
 
       for (const endpoint of endpoints) {
-        const response = await request(httpServer)
-          .get(endpoint)
-          .expect(200);
+        const response = await request(httpServer).get(endpoint).expect(200);
 
         expect(response.body).toHaveProperty('info');
         expect(response.body).toHaveProperty('results');
@@ -145,12 +145,14 @@ describe('AppController (e2e)', () => {
     });
 
     it('first page prev is null and next points to page 2', async () => {
-      const endpoints = ['/api/character?page=1', '/api/location?page=1', '/api/episode?page=1'];
+      const endpoints = [
+        '/api/character?page=1',
+        '/api/location?page=1',
+        '/api/episode?page=1',
+      ];
 
       for (const endpoint of endpoints) {
-        const response = await request(httpServer)
-          .get(endpoint)
-          .expect(200);
+        const response = await request(httpServer).get(endpoint).expect(200);
 
         expect(response.body.info.prev).toBeNull();
         expect(response.body.info.next).toContain('page=2');
@@ -165,9 +167,7 @@ describe('AppController (e2e)', () => {
       ];
 
       for (const { url, prevPage } of endpoints) {
-        const response = await request(httpServer)
-          .get(url)
-          .expect(200);
+        const response = await request(httpServer).get(url).expect(200);
 
         expect(response.body.info.next).toBeNull();
         expect(response.body.info.prev).toContain(prevPage);
@@ -177,24 +177,28 @@ describe('AppController (e2e)', () => {
 
   describe('Detail endpoints', () => {
     it('returns 200 for existing resources', async () => {
-      const endpoints = ['/api/character/1', '/api/location/1', '/api/episode/1'];
+      const endpoints = [
+        '/api/character/1',
+        '/api/location/1',
+        '/api/episode/1',
+      ];
 
       for (const endpoint of endpoints) {
-        const response = await request(httpServer)
-          .get(endpoint)
-          .expect(200);
+        const response = await request(httpServer).get(endpoint).expect(200);
 
         expect(response.body).toHaveProperty('id', 1);
       }
     });
 
     it('returns 404 for non-existent resources', async () => {
-      const endpoints = ['/api/character/999999', '/api/location/999999', '/api/episode/999999'];
+      const endpoints = [
+        '/api/character/999999',
+        '/api/location/999999',
+        '/api/episode/999999',
+      ];
 
       for (const endpoint of endpoints) {
-        await request(httpServer)
-          .get(endpoint)
-          .expect(404);
+        await request(httpServer).get(endpoint).expect(404);
       }
     });
   });

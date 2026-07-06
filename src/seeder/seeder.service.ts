@@ -53,17 +53,23 @@ export class SeederService implements OnApplicationBootstrap {
       this.logger.log('Starting character seeder...');
       await this.characterSeeder.seed();
       const finalCharacterCount = await this.characterRepo.count();
-      this.logger.log(`Character seeding complete: ${finalCharacterCount} records in database`);
+      this.logger.log(
+        `Character seeding complete: ${finalCharacterCount} records in database`,
+      );
 
       this.logger.log('Starting location seeder...');
       await this.locationSeeder.seed();
       const finalLocationCount = await this.locationRepo.count();
-      this.logger.log(`Location seeding complete: ${finalLocationCount} records in database`);
+      this.logger.log(
+        `Location seeding complete: ${finalLocationCount} records in database`,
+      );
 
       this.logger.log('Starting episode seeder...');
       await this.episodeSeeder.seed();
       const finalEpisodeCount = await this.episodeRepo.count();
-      this.logger.log(`Episode seeding complete: ${finalEpisodeCount} records in database`);
+      this.logger.log(
+        `Episode seeding complete: ${finalEpisodeCount} records in database`,
+      );
 
       this.logger.log('Seeder finished');
     } catch (err: any) {

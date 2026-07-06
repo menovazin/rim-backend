@@ -9,10 +9,13 @@ import { LocationSeederService } from './location-seeder.service';
 import { EpisodeSeederService } from './episode-seeder.service';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Character, Location, Episode]),
+  imports: [TypeOrmModule.forFeature([Character, Location, Episode])],
+  providers: [
+    SeederService,
+    CharacterSeederService,
+    LocationSeederService,
+    EpisodeSeederService,
   ],
-  providers: [SeederService, CharacterSeederService, LocationSeederService, EpisodeSeederService],
   exports: [SeederService],
 })
 export class SeederModule {}

@@ -59,10 +59,11 @@ export class EpisodeService {
       name: e.name,
       air_date: e.air_date,
       episode: e.episode,
-      characters: e.characterUrls.map((u) => u.replace(/https?:\/\/[^\/]+/, '')),
+      characters: e.characterUrls.map((u) =>
+        u.replace(/https?:\/\/[^\/]+/, ''),
+      ),
       url: e.url,
       created: e.created,
     };
   }
 }
-

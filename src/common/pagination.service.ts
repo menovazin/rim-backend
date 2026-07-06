@@ -22,10 +22,7 @@ export class PaginationService {
     return {
       count: total,
       pages,
-      next:
-        page < pages
-          ? `${protocol}://${baseUrl}?page=${page + 1}`
-          : null,
+      next: page < pages ? `${protocol}://${baseUrl}?page=${page + 1}` : null,
       prev: page > 1 ? `${protocol}://${baseUrl}?page=${page - 1}` : null,
     };
   }

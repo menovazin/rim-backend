@@ -1,0 +1,14 @@
+version: '3.9'
+
+services:
+  api:
+    build: .
+    restart: unless-stopped
+    volumes:
+      - ./data:/app/data
+      - ./static:/app/static
+    environment:
+      - PORT=3000
+      - DB_PATH=/app/data/db.sqlite
+    ports:
+      - "8765:3000"

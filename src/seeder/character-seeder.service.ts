@@ -71,7 +71,9 @@ export class CharacterSeederService {
       page++;
     }
 
-    this.logger.log(`Character seed complete: ${totalSeeded} characters processed`);
+    this.logger.log(
+      `Character seed complete: ${totalSeeded} characters processed`,
+    );
   }
 
   private async downloadAvatar(id: number, imageUrl: string): Promise<void> {
@@ -80,7 +82,13 @@ export class CharacterSeederService {
     if (fs.existsSync(filePath)) return;
 
     try {
-      const response = await fetchWithRetry(imageUrl, { responseType: 'arraybuffer' }, 2, 500, 2000);
+      const response = await fetchWithRetry(
+        imageUrl,
+        { responseType: 'arraybuffer' },
+        2,
+        500,
+        2000,
+      );
       const buffer = Buffer.from(response.data);
 
       await path.mkdir(AVATAR_DIR, { recursive: true });
@@ -88,7 +96,9 @@ export class CharacterSeederService {
 
       await new Promise((r) => setTimeout(r, 100));
     } catch (err: any) {
-      this.logger.warn(`Failed to download avatar for character ${id}: ${err.message}`);
+      this.logger.warn(
+        `Failed to download avatar for character ${id}: ${err.message}`,
+      );
     }
   }
 }
