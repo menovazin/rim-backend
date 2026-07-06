@@ -7,10 +7,13 @@ import { Episode } from '../modules/episode/episode.entity';
 import { CharacterSeederService } from './character-seeder.service';
 import { LocationSeederService } from './location-seeder.service';
 import { EpisodeSeederService } from './episode-seeder.service';
+import { SeedVersion } from './seed-version.entity';
+import { SEED_VERSION } from './seed-version';
 
 export enum SeederStrategy {
   FULL_SEED = 'full_seed',
   UPSERT = 'upsert',
+  SKIP = 'skip',
 }
 
 @Injectable()
@@ -24,6 +27,8 @@ export class SeederService implements OnApplicationBootstrap {
     private readonly locationRepo: Repository<Location>,
     @InjectRepository(Episode)
     private readonly episodeRepo: Repository<Episode>,
+    @InjectRepository(SeedVersion)
+    private readonly seedVersionRepo: Repository<SeedVersion>,
     private readonly characterSeeder: CharacterSeederService,
     private readonly locationSeeder: LocationSeederService,
     private readonly episodeSeeder: EpisodeSeederService,
@@ -31,25 +36,38 @@ export class SeederService implements OnApplicationBootstrap {
 
   async onApplicationBootstrap(): Promise<void> {
     try {
-      // Task 5.1: Check row counts in all 3 tables
       const characterCount = await this.characterRepo.count();
       const locationCount = await this.locationRepo.count();
       const episodeCount = await this.episodeRepo.count();
 
-      // Log row counts
       this.logger.log(
         `Character: ${characterCount} rows, Location: ${locationCount} rows, Episode: ${episodeCount} rows`,
       );
 
-      // Determine strategy: if any table is empty -> full seed, else -> upsert
-      const strategy =
-        characterCount === 0 || locationCount === 0 || episodeCount === 0
-          ? SeederStrategy.FULL_SEED
-          : SeederStrategy.UPSERT;
+      const seedVersion = await this.seedVersionRepo.findOne({
+        where: {},
+        order: { id: 'ASC' },
+      });
+      const persistedVersion = seedVersion?.version ?? null;
+      this.logger.log(
+        `Seed version: ${persistedVersion ?? 'none'}`,
+      );
 
+      const allTablesPopulated =
+        characterCount > 0 && locationCount > 0 && episodeCount > 0;
+      const shouldSkip =
+        persistedVersion === SEED_VERSION && allTablesPopulated;
+
+      const strategy = shouldSkip ? SeederStrategy.SKIP : SeederStrategy.FULL_SEED;
       this.logger.log(`Strategy: ${strategy}`);
 
-      // Task 5.3: Call seeders in order: character -> location -> episode
+      if (shouldSkip) {
+        this.logger.log(
+          `Seeding skipped: data already present at version ${SEED_VERSION}`,
+        );
+        return;
+      }
+
       this.logger.log('Starting character seeder...');
       await this.characterSeeder.seed();
       const finalCharacterCount = await this.characterRepo.count();
@@ -71,10 +89,26 @@ export class SeederService implements OnApplicationBootstrap {
         `Episode seeding complete: ${finalEpisodeCount} records in database`,
       );
 
+      await this.saveSeedVersion(SEED_VERSION);
+
       this.logger.log('Seeder finished');
     } catch (err: any) {
       this.logger.error(`Seeder failed: ${err.message}`, err.stack);
       throw err;
+    }
+  }
+
+  private async saveSeedVersion(version: string): Promise<void> {
+    const existing = await this.seedVersionRepo.findOne({
+      where: {},
+      order: { id: 'ASC' },
+    });
+
+    if (existing) {
+      existing.version = version;
+      await this.seedVersionRepo.save(existing);
+    } else {
+      await this.seedVersionRepo.save({ version });
     }
   }
 }

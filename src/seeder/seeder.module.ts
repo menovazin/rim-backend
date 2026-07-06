@@ -7,9 +7,10 @@ import { SeederService } from './seeder.service';
 import { CharacterSeederService } from './character-seeder.service';
 import { LocationSeederService } from './location-seeder.service';
 import { EpisodeSeederService } from './episode-seeder.service';
+import { SeedVersion } from './seed-version.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Character, Location, Episode])],
+  imports: [TypeOrmModule.forFeature([Character, Location, Episode, SeedVersion])],
   providers: [
     SeederService,
     CharacterSeederService,
