@@ -7,6 +7,7 @@ import { CharacterModule } from './modules/character/character.module';
 import { LocationModule } from './modules/location/location.module';
 import { EpisodeModule } from './modules/episode/episode.module';
 import { SeederModule } from './seeder/seeder.module';
+import { AppController } from './app.controller';
 
 @Module({
   imports: [
@@ -32,5 +33,6 @@ import { SeederModule } from './seeder/seeder.module';
     EpisodeModule,
     SeederModule,
   ],
+  controllers: [AppController],
 })
 export class AppModule {}

@@ -2,15 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Character } from './character.entity';
-
-const PAGE_SIZE = 20;
-
-export interface PaginationInfo {
-  count: number;
-  pages: number;
-  next: string | null;
-  prev: string | null;
-}
+import { PaginationService, PaginationInfo } from '../../common';
 
 export interface CharacterResponse {
   id: number;
@@ -32,23 +24,26 @@ export class CharacterService {
   constructor(
     @InjectRepository(Character)
     private readonly repo: Repository<Character>,
+    private readonly paginationService: PaginationService,
   ) {}
 
-  async findAll(page = 1): Promise<{ info: PaginationInfo; results: CharacterResponse[] }> {
+  async findAll(
+    page = 1,
+    host: string = 'localhost:3000',
+    protocol: string = 'https',
+  ): Promise<{ info: PaginationInfo; results: CharacterResponse[] }> {
     const [items, total] = await this.repo.findAndCount({
       order: { id: 'ASC' },
-      skip: (page - 1) * PAGE_SIZE,
-      take: PAGE_SIZE,
+      skip: (page - 1) * this.paginationService.PAGE_SIZE,
+      take: this.paginationService.PAGE_SIZE,
     });
 
-    const pages = Math.ceil(total / PAGE_SIZE);
-
-    const info: PaginationInfo = {
-      count: total,
-      pages,
-      next: page < pages ? `/api/character?page=${page + 1}` : null,
-      prev: page > 1 ? `/api/character?page=${page - 1}` : null,
-    };
+    const info = this.paginationService.calculatePagination(
+      page,
+      total,
+      `${host}/api/character`,
+      protocol,
+    );
 
     const results = items.map((c) => this.toResponse(c));
 
@@ -80,3 +75,4 @@ export class CharacterService {
     };
   }
 }
+
