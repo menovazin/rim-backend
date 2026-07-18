@@ -4,12 +4,6 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Устанавливаем Content-Type: application/json для всех ответов
-  app.use((req: any, res: any, next: () => void) => {
-    res.setHeader('Content-Type', 'application/json');
-    next();
-  });
-
   app.enableCors({ origin: '*' });
 
   const port = process.env.PORT || 3000;

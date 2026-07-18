@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { AbstractLoader, ExpressLoader } from '@nestjs/serve-static';
 import { Repository } from 'typeorm';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
@@ -30,6 +31,10 @@ describe('AppController (e2e)', () => {
       })
       .overrideProvider(SeederService)
       .useValue({ onApplicationBootstrap: () => Promise.resolve() })
+      // TestingModule resolves AbstractLoader before HttpAdapter exists → NoopLoader;
+      // force Express so ServeStaticModule actually mounts avatars in e2e.
+      .overrideProvider(AbstractLoader)
+      .useClass(ExpressLoader)
       .compile();
 
     app = moduleFixture.createNestApplication();
@@ -211,6 +216,25 @@ describe('AppController (e2e)', () => {
       for (const endpoint of endpoints) {
         await request(httpServer).get(endpoint).expect(404);
       }
+    });
+  });
+
+  describe('GET /api/character/avatar/:filename', () => {
+    it('serves avatar JPEG with image/jpeg Content-Type', async () => {
+      const response = await request(httpServer)
+        .get('/api/character/avatar/1.jpeg')
+        .buffer(true)
+        .parse((res, callback) => {
+          const chunks: Buffer[] = [];
+          res.on('data', (chunk: Buffer) => chunks.push(chunk));
+          res.on('end', () => callback(null, Buffer.concat(chunks)));
+        })
+        .expect(200);
+
+      expect(response.headers['content-type']).toMatch(/^image\/jpeg/);
+      expect(Buffer.isBuffer(response.body)).toBe(true);
+      expect(response.body[0]).toBe(0xff);
+      expect(response.body[1]).toBe(0xd8);
     });
   });
 
